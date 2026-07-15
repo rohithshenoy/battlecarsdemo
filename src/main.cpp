@@ -62,18 +62,19 @@ Color parseSpaceshipColorValue(const std::string& value) {
 }
 
 Color parseSpaceshipColor(int argc, char** argv) {
-    for (int index = 1; index < argc; ++index) {
-        const std::string argument = argv[index];
+    for (int argIndex = 1; argIndex < argc; ++argIndex) {
+        const std::string argument = argv[argIndex];
         if (argument == "--spaceship-color") {
-            if (index + 1 >= argc) {
+            if (argIndex + 1 >= argc) {
                 throw std::invalid_argument("Missing value for --spaceship-color.");
             }
-            return parseSpaceshipColorValue(argv[index + 1]);
+            return parseSpaceshipColorValue(argv[argIndex + 1]);
         }
 
         constexpr const char* kPrefix = "--spaceship-color=";
+        constexpr auto kPrefixLength = sizeof("--spaceship-color=") - 1;
         if (argument.rfind(kPrefix, 0) == 0) {
-            return parseSpaceshipColorValue(argument.substr(std::string(kPrefix).size()));
+            return parseSpaceshipColorValue(argument.substr(kPrefixLength));
         }
     }
 
