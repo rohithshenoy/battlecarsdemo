@@ -6,12 +6,14 @@
 
 #include <chrono>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 
 namespace {
 constexpr int kWindowWidth = 800;
 constexpr int kWindowHeight = 600;
+constexpr Color kDefaultPlayerColor{0.2f, 0.9f, 0.3f};
 
 void framebufferSizeCallback(GLFWwindow*, int width, int height) {
     glViewport(0, 0, width, height);
@@ -38,9 +40,56 @@ void makeOrthographic(float left, float right, float bottom, float top, float* m
     matrix[14] = 0.0f;
     matrix[15] = 1.0f;
 }
+
+Color parseSpaceshipColorValue(const std::string& value) {
+    std::istringstream input(value);
+    Color color{};
+    char separator = '\0';
+
+    if (!(input >> color.red >> separator) || separator != ',' ||
+        !(input >> color.green >> separator) || separator != ',' ||
+        !(input >> color.blue) || (input >> separator)) {
+        throw std::invalid_argument("Invalid spaceship color. Use --spaceship-color=r,g,b with values between 0.0 and 1.0.");
+    }
+
+    if (color.red < 0.0f || color.red > 1.0f ||
+        color.green < 0.0f || color.green > 1.0f ||
+        color.blue < 0.0f || color.blue > 1.0f) {
+        throw std::invalid_argument("Invalid spaceship color. Each color component must be between 0.0 and 1.0.");
+    }
+
+    return color;
 }
 
-int main() {
+Color parseSpaceshipColor(int argc, char** argv) {
+    for (int index = 1; index < argc; ++index) {
+        const std::string argument = argv[index];
+        if (argument == "--spaceship-color") {
+            if (index + 1 >= argc) {
+                throw std::invalid_argument("Missing value for --spaceship-color.");
+            }
+            return parseSpaceshipColorValue(argv[index + 1]);
+        }
+
+        constexpr const char* kPrefix = "--spaceship-color=";
+        if (argument.rfind(kPrefix, 0) == 0) {
+            return parseSpaceshipColorValue(argument.substr(std::string(kPrefix).size()));
+        }
+    }
+
+    return kDefaultPlayerColor;
+}
+}
+
+int main(int argc, char** argv) {
+    Color playerColor{};
+    try {
+        playerColor = parseSpaceshipColor(argc, argv);
+    } catch (const std::exception& exception) {
+        std::cerr << exception.what() << std::endl;
+        return 1;
+    }
+
     if (glfwInit() == GLFW_FALSE) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return 1;
@@ -101,7 +150,7 @@ int main() {
         shader.use();
         shader.setMat4("projection", projection);
 
-        Game game(kWindowWidth, kWindowHeight);
+        Game game(kWindowWidth, kWindowHeight, playerColor);
 
         auto previousTime = std::chrono::steady_clock::now();
         while (!glfwWindowShouldClose(window)) {
