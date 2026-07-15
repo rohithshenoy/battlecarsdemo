@@ -14,6 +14,8 @@ namespace {
 constexpr int kWindowWidth = 800;
 constexpr int kWindowHeight = 600;
 constexpr Color kDefaultPlayerColor{0.2f, 0.9f, 0.3f};
+constexpr char kInvalidSpaceshipColorMessage[] =
+    "Invalid spaceship color. Use --spaceship-color=r,g,b with values between 0.0 and 1.0.";
 constexpr char kSpaceshipColorPrefix[] = "--spaceship-color=";
 constexpr auto kSpaceshipColorPrefixLength = sizeof(kSpaceshipColorPrefix) - 1;
 
@@ -51,13 +53,13 @@ bool parseSpaceshipColorValue(const std::string& value, Color* color, std::strin
     if (!(input >> parsedColor.red >> separator) || separator != ',' ||
         !(input >> parsedColor.green >> separator) || separator != ',' ||
         !(input >> parsedColor.blue)) {
-        *errorMessage = "Invalid spaceship color. Use --spaceship-color=r,g,b with values between 0.0 and 1.0.";
+        *errorMessage = kInvalidSpaceshipColorMessage;
         return false;
     }
 
     input >> std::ws;
     if (!input.eof()) {
-        *errorMessage = "Invalid spaceship color. Use --spaceship-color=r,g,b with values between 0.0 and 1.0.";
+        *errorMessage = kInvalidSpaceshipColorMessage;
         return false;
     }
 
@@ -86,7 +88,7 @@ bool parseSpaceshipColor(int argc, char** argv, Color* playerColor, std::string*
             return parseSpaceshipColorValue(value, playerColor, errorMessage);
         }
 
-        if (argument.rfind(kSpaceshipColorPrefix, 0) == 0) {
+        if (argument.compare(0, kSpaceshipColorPrefixLength, kSpaceshipColorPrefix) == 0) {
             return parseSpaceshipColorValue(argument.substr(kSpaceshipColorPrefixLength), playerColor, errorMessage);
         }
     }
