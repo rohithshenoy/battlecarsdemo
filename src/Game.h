@@ -11,11 +11,17 @@ struct Rect {
     float height;
 };
 
+struct Color {
+    float red;
+    float green;
+    float blue;
+};
+
 class GLFWwindow;
 
 class Game {
 public:
-    Game(int width, int height);
+    Game(int width, int height, const Color& playerColor);
 
     void processInput(GLFWwindow* window, float deltaTime);
     void update(float deltaTime);
@@ -27,6 +33,7 @@ private:
     int windowWidth_;
     int windowHeight_;
     Rect player_;
+    Color playerColor_;
     Rect bullet_;
     bool bulletActive_ = false;
     std::vector<Rect> enemies_;

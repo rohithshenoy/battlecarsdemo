@@ -13,10 +13,11 @@ constexpr float kEnemyDropDistance = 24.0f;
 constexpr float kEnemyBottomLimit = 80.0f;
 }
 
-Game::Game(int width, int height)
+Game::Game(int width, int height, const Color& playerColor)
     : windowWidth_(width),
       windowHeight_(height),
       player_{width * 0.5f - 30.0f, 30.0f, 60.0f, 20.0f},
+      playerColor_(playerColor),
       bullet_{0.0f, 0.0f, 6.0f, 16.0f} {
     createEnemies();
 }
@@ -99,7 +100,7 @@ void Game::update(float deltaTime) {
 }
 
 void Game::render(const Shader& shader, unsigned int quadVao) const {
-    drawRect(shader, quadVao, player_, 0.2f, 0.9f, 0.3f);
+    drawRect(shader, quadVao, player_, playerColor_.red, playerColor_.green, playerColor_.blue);
 
     if (bulletActive_) {
         drawRect(shader, quadVao, bullet_, 1.0f, 1.0f, 1.0f);
