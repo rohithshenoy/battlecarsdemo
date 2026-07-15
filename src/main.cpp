@@ -6,7 +6,6 @@
 
 #include <chrono>
 #include <iostream>
-#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -44,52 +43,63 @@ void makeOrthographic(float left, float right, float bottom, float top, float* m
     matrix[15] = 1.0f;
 }
 
-Color parseSpaceshipColorValue(const std::string& value) {
+bool parseSpaceshipColorValue(const std::string& value, Color* color, std::string* errorMessage) {
     std::istringstream input(value);
-    Color color{0.0f, 0.0f, 0.0f};
+    Color parsedColor{0.0f, 0.0f, 0.0f};
     char separator = '\0';
 
-    if (!(input >> color.red >> separator) || separator != ',' ||
-        !(input >> color.green >> separator) || separator != ',' ||
-        !(input >> color.blue) || (input >> separator)) {
-        throw std::invalid_argument("Invalid spaceship color. Use --spaceship-color=r,g,b with values between 0.0 and 1.0.");
+    if (!(input >> parsedColor.red >> separator) || separator != ',' ||
+        !(input >> parsedColor.green >> separator) || separator != ',' ||
+        !(input >> parsedColor.blue)) {
+        *errorMessage = "Invalid spaceship color. Use --spaceship-color=r,g,b with values between 0.0 and 1.0.";
+        return false;
     }
 
-    if (color.red < 0.0f || color.red > 1.0f ||
-        color.green < 0.0f || color.green > 1.0f ||
-        color.blue < 0.0f || color.blue > 1.0f) {
-        throw std::invalid_argument("Invalid spaceship color. Each color component must be between 0.0 and 1.0.");
+    input >> std::ws;
+    if (!input.eof()) {
+        *errorMessage = "Invalid spaceship color. Use --spaceship-color=r,g,b with values between 0.0 and 1.0.";
+        return false;
     }
 
-    return color;
+    if (parsedColor.red < 0.0f || parsedColor.red > 1.0f ||
+        parsedColor.green < 0.0f || parsedColor.green > 1.0f ||
+        parsedColor.blue < 0.0f || parsedColor.blue > 1.0f) {
+        *errorMessage = "Invalid spaceship color. Each color component must be between 0.0 and 1.0.";
+        return false;
+    }
+
+    *color = parsedColor;
+    return true;
 }
 
-Color parseSpaceshipColor(int argc, char** argv) {
+bool parseSpaceshipColor(int argc, char** argv, Color* playerColor, std::string* errorMessage) {
+    *playerColor = kDefaultPlayerColor;
+
     for (int argIndex = 1; argIndex < argc; ++argIndex) {
         const std::string argument = argv[argIndex];
         if (argument == "--spaceship-color") {
             if (argIndex + 1 >= argc) {
-                throw std::invalid_argument("Missing value for --spaceship-color.");
+                *errorMessage = "Missing value for --spaceship-color.";
+                return false;
             }
             const std::string value = argv[++argIndex];
-            return parseSpaceshipColorValue(value);
+            return parseSpaceshipColorValue(value, playerColor, errorMessage);
         }
 
         if (argument.rfind(kSpaceshipColorPrefix, 0) == 0) {
-            return parseSpaceshipColorValue(argument.substr(kSpaceshipColorPrefixLength));
+            return parseSpaceshipColorValue(argument.substr(kSpaceshipColorPrefixLength), playerColor, errorMessage);
         }
     }
 
-    return kDefaultPlayerColor;
+    return true;
 }
 }
 
 int main(int argc, char** argv) {
-    std::optional<Color> playerColor;
-    try {
-        playerColor = parseSpaceshipColor(argc, argv);
-    } catch (const std::exception& exception) {
-        std::cerr << exception.what() << std::endl;
+    Color playerColor = kDefaultPlayerColor;
+    std::string playerColorError;
+    if (!parseSpaceshipColor(argc, argv, &playerColor, &playerColorError)) {
+        std::cerr << playerColorError << std::endl;
         return 1;
     }
 
@@ -153,7 +163,7 @@ int main(int argc, char** argv) {
         shader.use();
         shader.setMat4("projection", projection);
 
-        Game game(kWindowWidth, kWindowHeight, *playerColor);
+        Game game(kWindowWidth, kWindowHeight, playerColor);
 
         auto previousTime = std::chrono::steady_clock::now();
         while (!glfwWindowShouldClose(window)) {
