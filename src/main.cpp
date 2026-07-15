@@ -6,6 +6,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -14,6 +15,8 @@ namespace {
 constexpr int kWindowWidth = 800;
 constexpr int kWindowHeight = 600;
 constexpr Color kDefaultPlayerColor{0.2f, 0.9f, 0.3f};
+constexpr char kSpaceshipColorPrefix[] = "--spaceship-color=";
+constexpr auto kSpaceshipColorPrefixLength = sizeof(kSpaceshipColorPrefix) - 1;
 
 void framebufferSizeCallback(GLFWwindow*, int width, int height) {
     glViewport(0, 0, width, height);
@@ -72,10 +75,8 @@ Color parseSpaceshipColor(int argc, char** argv) {
             return parseSpaceshipColorValue(value);
         }
 
-        constexpr const char* kPrefix = "--spaceship-color=";
-        constexpr auto kPrefixLength = sizeof("--spaceship-color=") - 1;
-        if (argument.rfind(kPrefix, 0) == 0) {
-            return parseSpaceshipColorValue(argument.substr(kPrefixLength));
+        if (argument.rfind(kSpaceshipColorPrefix, 0) == 0) {
+            return parseSpaceshipColorValue(argument.substr(kSpaceshipColorPrefixLength));
         }
     }
 
@@ -84,7 +85,7 @@ Color parseSpaceshipColor(int argc, char** argv) {
 }
 
 int main(int argc, char** argv) {
-    Color playerColor{};
+    std::optional<Color> playerColor;
     try {
         playerColor = parseSpaceshipColor(argc, argv);
     } catch (const std::exception& exception) {
@@ -152,7 +153,7 @@ int main(int argc, char** argv) {
         shader.use();
         shader.setMat4("projection", projection);
 
-        Game game(kWindowWidth, kWindowHeight, playerColor);
+        Game game(kWindowWidth, kWindowHeight, *playerColor);
 
         auto previousTime = std::chrono::steady_clock::now();
         while (!glfwWindowShouldClose(window)) {
