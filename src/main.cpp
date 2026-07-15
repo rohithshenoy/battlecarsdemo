@@ -43,7 +43,7 @@ void makeOrthographic(float left, float right, float bottom, float top, float* m
 
 Color parseSpaceshipColorValue(const std::string& value) {
     std::istringstream input(value);
-    Color color{};
+    Color color{0.0f, 0.0f, 0.0f};
     char separator = '\0';
 
     if (!(input >> color.red >> separator) || separator != ',' ||
@@ -68,7 +68,8 @@ Color parseSpaceshipColor(int argc, char** argv) {
             if (argIndex + 1 >= argc) {
                 throw std::invalid_argument("Missing value for --spaceship-color.");
             }
-            return parseSpaceshipColorValue(argv[argIndex + 1]);
+            const std::string value = argv[++argIndex];
+            return parseSpaceshipColorValue(value);
         }
 
         constexpr const char* kPrefix = "--spaceship-color=";
