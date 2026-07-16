@@ -8,18 +8,42 @@
 namespace {
 constexpr float kPlayerSpeed = 350.0f;
 constexpr float kBulletSpeed = 500.0f;
+constexpr float kTurboBulletSpeedMultiplier = 1.6f;
 constexpr float kEnemySpeed = 70.0f;
 constexpr float kEnemyDropDistance = 24.0f;
 constexpr float kEnemyBottomLimit = 80.0f;
+constexpr float kBulletWidth = 6.0f;
+constexpr float kBulletHeight = 16.0f;
+constexpr float kFireCooldownNormal = 0.35f;
+constexpr float kFireCooldownTurbo = 0.08f;
+constexpr int kMaxBulletsNormal = 1;
+constexpr int kMaxBulletsTurbo = 8;
 }
 
 Game::Game(int width, int height, const Color& playerColor)
     : windowWidth_(width),
       windowHeight_(height),
       player_{width * 0.5f - 30.0f, 30.0f, 60.0f, 20.0f},
-      playerColor_(playerColor),
-      bullet_{0.0f, 0.0f, 6.0f, 16.0f} {
+      playerColor_(playerColor) {
     createEnemies();
+}
+
+void Game::tryFire(bool turbo) {
+    const int maxBullets = turbo ? kMaxBulletsTurbo : kMaxBulletsNormal;
+    if (static_cast<int>(bullets_.size()) >= maxBullets) {
+        return;
+    }
+
+    Bullet bullet;
+    bullet.turbo = turbo;
+    bullet.rect = Rect{
+        player_.x + player_.width * 0.5f - kBulletWidth * 0.5f,
+        player_.y + player_.height,
+        kBulletWidth,
+        kBulletHeight
+    };
+    bullets_.push_back(bullet);
+    fireCooldown_ = turbo ? kFireCooldownTurbo : kFireCooldownNormal;
 }
 
 void Game::processInput(GLFWwindow* window, float deltaTime) {
@@ -38,14 +62,13 @@ void Game::processInput(GLFWwindow* window, float deltaTime) {
     player_.x += horizontal * kPlayerSpeed * deltaTime;
     player_.x = std::clamp(player_.x, 0.0f, static_cast<float>(windowWidth_) - player_.width);
 
-    static bool spaceWasDown = false;
     const bool spaceIsDown = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
-    if (spaceIsDown && !spaceWasDown && !bulletActive_) {
-        bulletActive_ = true;
-        bullet_.x = player_.x + player_.width * 0.5f - bullet_.width * 0.5f;
-        bullet_.y = player_.y + player_.height;
+    const bool turboIsDown = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+                             glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+
+    if (spaceIsDown && fireCooldown_ <= 0.0f) {
+        tryFire(turboIsDown);
     }
-    spaceWasDown = spaceIsDown;
 }
 
 void Game::update(float deltaTime) {
@@ -53,10 +76,32 @@ void Game::update(float deltaTime) {
         return;
     }
 
-    if (bulletActive_) {
-        bullet_.y += kBulletSpeed * deltaTime;
-        if (bullet_.y > static_cast<float>(windowHeight_)) {
-            bulletActive_ = false;
+    if (fireCooldown_ > 0.0f) {
+        fireCooldown_ -= deltaTime;
+    }
+
+    for (auto bulletIt = bullets_.begin(); bulletIt != bullets_.end();) {
+        const float speed = bulletIt->turbo ? kBulletSpeed * kTurboBulletSpeedMultiplier : kBulletSpeed;
+        bulletIt->rect.y += speed * deltaTime;
+
+        if (bulletIt->rect.y > static_cast<float>(windowHeight_)) {
+            bulletIt = bullets_.erase(bulletIt);
+            continue;
+        }
+
+        bool bulletHit = false;
+        for (std::size_t index = 0; index < enemies_.size(); ++index) {
+            if (intersects(bulletIt->rect, enemies_[index])) {
+                enemies_.erase(enemies_.begin() + static_cast<long>(index));
+                bulletHit = true;
+                break;
+            }
+        }
+
+        if (bulletHit) {
+            bulletIt = bullets_.erase(bulletIt);
+        } else {
+            ++bulletIt;
         }
     }
 
@@ -76,16 +121,6 @@ void Game::update(float deltaTime) {
         }
     }
 
-    if (bulletActive_) {
-        for (std::size_t index = 0; index < enemies_.size(); ++index) {
-            if (intersects(bullet_, enemies_[index])) {
-                bulletActive_ = false;
-                enemies_.erase(enemies_.begin() + static_cast<long>(index));
-                break;
-            }
-        }
-    }
-
     if (enemies_.empty()) {
         finishGame(true);
         return;
@@ -102,8 +137,12 @@ void Game::update(float deltaTime) {
 void Game::render(const Shader& shader, unsigned int quadVao) const {
     drawRect(shader, quadVao, player_, playerColor_.red, playerColor_.green, playerColor_.blue);
 
-    if (bulletActive_) {
-        drawRect(shader, quadVao, bullet_, 1.0f, 1.0f, 1.0f);
+    for (const Bullet& bullet : bullets_) {
+        if (bullet.turbo) {
+            drawRect(shader, quadVao, bullet.rect, 1.0f, 0.75f, 0.2f);
+        } else {
+            drawRect(shader, quadVao, bullet.rect, 1.0f, 1.0f, 1.0f);
+        }
     }
 
     for (const Rect& enemy : enemies_) {
