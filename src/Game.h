@@ -17,6 +17,11 @@ struct Color {
     float blue;
 };
 
+struct Bullet {
+    Rect rect;
+    bool turbo = false;
+};
+
 class GLFWwindow;
 
 class Game {
@@ -34,8 +39,8 @@ private:
     int windowHeight_;
     Rect player_;
     Color playerColor_;
-    Rect bullet_;
-    bool bulletActive_ = false;
+    std::vector<Bullet> bullets_;
+    float fireCooldown_ = 0.0f;
     std::vector<Rect> enemies_;
     float enemyDirection_ = 1.0f;
     bool finished_ = false;
@@ -46,4 +51,5 @@ private:
     void drawRect(const Shader& shader, unsigned int quadVao, const Rect& rect, float red, float green, float blue) const;
     void createEnemies();
     void finishGame(bool playerWon);
+    void tryFire(bool turbo);
 };
