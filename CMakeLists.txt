@@ -24,12 +24,12 @@ FetchContent_Declare(
     GIT_TAG v0.1.36
 )
 
+set(GLAD_PROFILE "core" CACHE STRING "" FORCE)
+set(GLAD_API "gl=3.3" CACHE STRING "" FORCE)
+
 FetchContent_MakeAvailable(glfw glad)
 
 find_package(OpenGL REQUIRED)
-
-add_library(glad_lib STATIC ${glad_SOURCE_DIR}/src/glad.c)
-target_include_directories(glad_lib PUBLIC ${glad_SOURCE_DIR}/include)
 
 add_executable(SpaceInvaders
     src/main.cpp
@@ -40,7 +40,7 @@ add_executable(SpaceInvaders
 target_include_directories(SpaceInvaders PRIVATE src)
 target_compile_definitions(SpaceInvaders PRIVATE SHADER_DIR="${CMAKE_CURRENT_SOURCE_DIR}/src/shaders")
 
-target_link_libraries(SpaceInvaders PRIVATE glad_lib glfw OpenGL::GL)
+target_link_libraries(SpaceInvaders PRIVATE glad glfw OpenGL::GL)
 
 if(MSVC)
     target_compile_options(SpaceInvaders PRIVATE /W4)
