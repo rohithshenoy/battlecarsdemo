@@ -13,8 +13,8 @@ constexpr float kTurboBulletSpeedMultiplier = 1.6f;
 constexpr float kEnemySpeed = 70.0f;
 constexpr float kEnemyDropDistance = 24.0f;
 constexpr float kEnemyBottomLimit = 80.0f;
-constexpr float kBulletWidth = 6.0f;
-constexpr float kBulletHeight = 16.0f;
+constexpr float kBulletWidth = 10.0f;
+constexpr float kBulletHeight = 24.0f;
 constexpr float kFireCooldownNormal = 0.35f;
 constexpr float kFireCooldownTurbo = 0.08f;
 constexpr int kMaxBulletsNormal = 1;
@@ -139,11 +139,7 @@ void Game::render(const Shader& shader, unsigned int quadVao) const {
     drawRect(shader, quadVao, player_, playerColor_.red, playerColor_.green, playerColor_.blue);
 
     for (const Bullet& bullet : bullets_) {
-        if (bullet.turbo) {
-            drawRect(shader, quadVao, bullet.rect, 1.0f, 0.75f, 0.2f);
-        } else {
-            drawRect(shader, quadVao, bullet.rect, 1.0f, 1.0f, 1.0f);
-        }
+        drawRocket(shader, quadVao, bullet.rect, bullet.turbo);
     }
 
     for (const Rect& enemy : enemies_) {
@@ -188,11 +184,30 @@ void Game::drawRect(const Shader& shader, unsigned int quadVao, const Rect& rect
     float model[16] = {};
     buildModelMatrix(rect, model);
 
+    shader.setInt("shapeType", 0);
     shader.setMat4("model", model);
     shader.setVec3("spriteColor", red, green, blue);
 
     glBindVertexArray(quadVao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void Game::drawRocket(const Shader& shader, unsigned int quadVao, const Rect& rect, bool turbo) const {
+    float model[16] = {};
+    buildModelMatrix(rect, model);
+
+    shader.setInt("shapeType", 1);
+    shader.setFloat("turboGlow", turbo ? 1.0f : 0.0f);
+    shader.setMat4("model", model);
+    shader.setVec3("spriteColor", 1.0f, 1.0f, 1.0f);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glBindVertexArray(quadVao);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glDisable(GL_BLEND);
 }
 
 void Game::createEnemies() {

@@ -10,6 +10,8 @@ public:
     void use() const;
     void setMat4(const char* name, const float* values) const;
     void setVec3(const char* name, float x, float y, float z) const;
+    void setInt(const char* name, int value) const;
+    void setFloat(const char* name, float value) const;
 
 private:
     unsigned int programId_ = 0;
