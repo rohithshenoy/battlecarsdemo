@@ -13,8 +13,8 @@ constexpr float kTurboBulletSpeedMultiplier = 1.6f;
 constexpr float kEnemySpeed = 70.0f;
 constexpr float kEnemyDropDistance = 24.0f;
 constexpr float kEnemyBottomLimit = 80.0f;
-constexpr float kBulletWidth = 6.0f;
-constexpr float kBulletHeight = 16.0f;
+constexpr float kBulletWidth = 10.0f;
+constexpr float kBulletHeight = 24.0f;
 constexpr float kFireCooldownNormal = 0.35f;
 constexpr float kFireCooldownTurbo = 0.08f;
 constexpr int kMaxBulletsNormal = 1;
@@ -92,7 +92,7 @@ void Game::update(float deltaTime) {
 
         bool bulletHit = false;
         for (std::size_t index = 0; index < enemies_.size(); ++index) {
-            if (intersects(bulletIt->rect, enemies_[index])) {
+            if (intersects(bulletIt->rect, enemies_[index].rect)) {
                 enemies_.erase(enemies_.begin() + static_cast<long>(index));
                 bulletHit = true;
                 break;
@@ -107,18 +107,18 @@ void Game::update(float deltaTime) {
     }
 
     bool reverseDirection = false;
-    for (Rect& enemy : enemies_) {
-        enemy.x += enemyDirection_ * kEnemySpeed * deltaTime;
-        if (enemy.x <= 0.0f || enemy.x + enemy.width >= static_cast<float>(windowWidth_)) {
+    for (Enemy& enemy : enemies_) {
+        enemy.rect.x += enemyDirection_ * kEnemySpeed * deltaTime;
+        if (enemy.rect.x <= 0.0f || enemy.rect.x + enemy.rect.width >= static_cast<float>(windowWidth_)) {
             reverseDirection = true;
         }
     }
 
     if (reverseDirection) {
         enemyDirection_ *= -1.0f;
-        for (Rect& enemy : enemies_) {
-            enemy.y -= kEnemyDropDistance;
-            enemy.x = std::clamp(enemy.x, 0.0f, static_cast<float>(windowWidth_) - enemy.width);
+        for (Enemy& enemy : enemies_) {
+            enemy.rect.y -= kEnemyDropDistance;
+            enemy.rect.x = std::clamp(enemy.rect.x, 0.0f, static_cast<float>(windowWidth_) - enemy.rect.width);
         }
     }
 
@@ -127,8 +127,8 @@ void Game::update(float deltaTime) {
         return;
     }
 
-    for (const Rect& enemy : enemies_) {
-        if (enemy.y <= kEnemyBottomLimit) {
+    for (const Enemy& enemy : enemies_) {
+        if (enemy.rect.y <= kEnemyBottomLimit) {
             finishGame(false);
             return;
         }
@@ -139,15 +139,11 @@ void Game::render(const Shader& shader, unsigned int quadVao) const {
     drawRect(shader, quadVao, player_, playerColor_.red, playerColor_.green, playerColor_.blue);
 
     for (const Bullet& bullet : bullets_) {
-        if (bullet.turbo) {
-            drawRect(shader, quadVao, bullet.rect, 1.0f, 0.75f, 0.2f);
-        } else {
-            drawRect(shader, quadVao, bullet.rect, 1.0f, 1.0f, 1.0f);
-        }
+        drawRocket(shader, quadVao, bullet.rect, bullet.turbo);
     }
 
-    for (const Rect& enemy : enemies_) {
-        drawRect(shader, quadVao, enemy, 0.9f, 0.2f, 0.2f);
+    for (const Enemy& enemy : enemies_) {
+        drawRect(shader, quadVao, enemy.rect, enemy.color.red, enemy.color.green, enemy.color.blue);
     }
 }
 
@@ -188,11 +184,30 @@ void Game::drawRect(const Shader& shader, unsigned int quadVao, const Rect& rect
     float model[16] = {};
     buildModelMatrix(rect, model);
 
+    shader.setInt("shapeType", 0);
     shader.setMat4("model", model);
     shader.setVec3("spriteColor", red, green, blue);
 
     glBindVertexArray(quadVao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void Game::drawRocket(const Shader& shader, unsigned int quadVao, const Rect& rect, bool turbo) const {
+    float model[16] = {};
+    buildModelMatrix(rect, model);
+
+    shader.setInt("shapeType", 1);
+    shader.setFloat("turboGlow", turbo ? 1.0f : 0.0f);
+    shader.setMat4("model", model);
+    shader.setVec3("spriteColor", 1.0f, 1.0f, 1.0f);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glBindVertexArray(quadVao);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glDisable(GL_BLEND);
 }
 
 void Game::createEnemies() {
@@ -207,13 +222,24 @@ void Game::createEnemies() {
     constexpr float startX = 90.0f;
     constexpr float startY = 480.0f;
 
+    // Distinct colors per invasion row (top → bottom).
+    constexpr Color rowColors[rows] = {
+        {0.95f, 0.35f, 0.85f},  // magenta
+        {0.35f, 0.75f, 1.0f},   // cyan
+        {1.0f, 0.75f, 0.2f},    // gold
+        {0.9f, 0.25f, 0.25f},   // red
+    };
+
     for (int row = 0; row < rows; ++row) {
         for (int column = 0; column < columns; ++column) {
-            enemies_.push_back(Rect{
-                startX + column * (enemyWidth + spacingX),
-                startY + row * (enemyHeight + spacingY),
-                enemyWidth,
-                enemyHeight
+            enemies_.push_back(Enemy{
+                Rect{
+                    startX + column * (enemyWidth + spacingX),
+                    startY + row * (enemyHeight + spacingY),
+                    enemyWidth,
+                    enemyHeight
+                },
+                rowColors[row]
             });
         }
     }
