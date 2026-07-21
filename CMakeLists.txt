@@ -27,6 +27,10 @@ FetchContent_Declare(
 set(GLAD_PROFILE "core" CACHE STRING "" FORCE)
 set(GLAD_API "gl=3.3" CACHE STRING "" FORCE)
 
+# glad v0.1.36 still declares cmake_minimum_required(VERSION 3.0).
+# CMake 4.0+ rejects < 3.5; raise the policy floor for the fetched deps.
+set(CMAKE_POLICY_VERSION_MINIMUM 3.10)
+
 FetchContent_MakeAvailable(glfw glad)
 
 find_package(OpenGL REQUIRED)
