@@ -1,0 +1,87 @@
+# Build directories
+build/
+out/
+cmake-build-*/
+_deps/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.txt
+CPackConfig.cmake
+CPackSourceConfig.cmake
+*.cmake
+!CMakeLists.txt
+
+# Compiled object files
+*.o
+*.obj
+*.lo
+*.slo
+
+# Precompiled headers
+*.gch
+*.pch
+
+# Compiled static libraries
+*.a
+*.la
+*.lai
+*.lib
+
+# Compiled dynamic libraries / shared objects
+*.so
+*.so.*
+*.dylib
+*.dll
+
+# Executables
+*.exe
+*.out
+*.app
+SpaceInvaders
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Dependency info
+*.d
+
+# IDE and editor files
+.vscode/
+.idea/
+*.code-workspace
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+.#*
+\#*#
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.fuse_hidden*
+.directory
+.Trash-*
+
+# Xvfb / testing artifacts
+/tmp/
+xvfb.log
