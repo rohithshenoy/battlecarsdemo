@@ -1,6 +1,6 @@
 # battlecarsdemo
 
-A simple OpenGL Space Invaders-style game built with C++17, GLFW, and GLAD. It demonstrates Cursor Cloud Agents capabilities with a playable desktop window.
+A simple OpenGL Space Invaders-style game built with C++17, GLFW, and GLAD. It demonstrates Cursor Cloud Agents capabilities with a playable desktop window. The player ship color is configurable at launch, and each alien invasion row uses a distinct color.
 
 ## Prerequisites
 
@@ -138,6 +138,17 @@ An alternate form is also accepted:
 ```
 
 If no color is specified, the default green (`0.2, 0.9, 0.3`) is used.
+
+### Alien spaceship colors
+
+Alien invaders use a fixed palette by row (top → bottom):
+
+| Row | Color |
+|-----|-------|
+| Top | Magenta (`0.95, 0.35, 0.85`) |
+| Second | Cyan (`0.35, 0.75, 1.0`) |
+| Third | Gold (`1.0, 0.75, 0.2`) |
+| Bottom | Red (`0.9, 0.25, 0.25`) |
 
 ## Controls
 
