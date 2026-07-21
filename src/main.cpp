@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 
 #include <chrono>
+#include <cctype>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -14,10 +15,16 @@ namespace {
 constexpr int kWindowWidth = 800;
 constexpr int kWindowHeight = 600;
 constexpr Color kDefaultPlayerColor{0.2f, 0.9f, 0.3f};
+constexpr BackgroundTheme kDefaultBackgroundTheme = BackgroundTheme::Classic;
 constexpr char kInvalidSpaceshipColorMessage[] =
     "Invalid spaceship color. Use --spaceship-color=r,g,b with values between 0.0 and 1.0.";
 constexpr char kSpaceshipColorPrefix[] = "--spaceship-color=";
 constexpr auto kSpaceshipColorPrefixLength = sizeof(kSpaceshipColorPrefix) - 1;
+constexpr char kBackgroundPrefix[] = "--background=";
+constexpr auto kBackgroundPrefixLength = sizeof(kBackgroundPrefix) - 1;
+constexpr char kInvalidBackgroundMessage[] =
+    "Invalid background. Use --background=<theme> where theme is one of: "
+    "classic, nebula, neon, aurora, deep-space.";
 
 void framebufferSizeCallback(GLFWwindow*, int width, int height) {
     glViewport(0, 0, width, height);
@@ -74,23 +81,90 @@ bool parseSpaceshipColorValue(const std::string& value, Color* color, std::strin
     return true;
 }
 
-bool parseSpaceshipColor(int argc, char** argv, Color* playerColor, std::string* errorMessage) {
+std::string toLowerAscii(std::string value) {
+    for (char& character : value) {
+        character = static_cast<char>(std::tolower(static_cast<unsigned char>(character)));
+    }
+    return value;
+}
+
+bool parseBackgroundThemeValue(const std::string& value, BackgroundTheme* theme, std::string* errorMessage) {
+    const std::string normalized = toLowerAscii(value);
+
+    if (normalized == "classic" || normalized == "black") {
+        *theme = BackgroundTheme::Classic;
+        return true;
+    }
+    if (normalized == "nebula" || normalized == "stars" || normalized == "space") {
+        *theme = BackgroundTheme::Nebula;
+        return true;
+    }
+    if (normalized == "neon" || normalized == "synthwave" || normalized == "80s" || normalized == "retro") {
+        *theme = BackgroundTheme::Neon;
+        return true;
+    }
+    if (normalized == "aurora") {
+        *theme = BackgroundTheme::Aurora;
+        return true;
+    }
+    if (normalized == "deep-space" || normalized == "deepspace" || normalized == "deep") {
+        *theme = BackgroundTheme::DeepSpace;
+        return true;
+    }
+
+    *errorMessage = kInvalidBackgroundMessage;
+    return false;
+}
+
+bool parseLaunchOptions(int argc, char** argv, Color* playerColor, BackgroundTheme* backgroundTheme,
+                        std::string* errorMessage) {
     *playerColor = kDefaultPlayerColor;
+    *backgroundTheme = kDefaultBackgroundTheme;
 
     for (int argIndex = 1; argIndex < argc; ++argIndex) {
         const std::string argument = argv[argIndex];
+
         if (argument == "--spaceship-color") {
             if (argIndex + 1 >= argc) {
                 *errorMessage = "Missing value for --spaceship-color.";
                 return false;
             }
             const std::string value = argv[++argIndex];
-            return parseSpaceshipColorValue(value, playerColor, errorMessage);
+            if (!parseSpaceshipColorValue(value, playerColor, errorMessage)) {
+                return false;
+            }
+            continue;
         }
 
         if (argument.compare(0, kSpaceshipColorPrefixLength, kSpaceshipColorPrefix) == 0) {
-            return parseSpaceshipColorValue(argument.substr(kSpaceshipColorPrefixLength), playerColor, errorMessage);
+            if (!parseSpaceshipColorValue(argument.substr(kSpaceshipColorPrefixLength), playerColor, errorMessage)) {
+                return false;
+            }
+            continue;
         }
+
+        if (argument == "--background") {
+            if (argIndex + 1 >= argc) {
+                *errorMessage = "Missing value for --background.";
+                return false;
+            }
+            const std::string value = argv[++argIndex];
+            if (!parseBackgroundThemeValue(value, backgroundTheme, errorMessage)) {
+                return false;
+            }
+            continue;
+        }
+
+        if (argument.compare(0, kBackgroundPrefixLength, kBackgroundPrefix) == 0) {
+            if (!parseBackgroundThemeValue(argument.substr(kBackgroundPrefixLength), backgroundTheme, errorMessage)) {
+                return false;
+            }
+            continue;
+        }
+
+        *errorMessage = "Unknown argument: " + argument +
+                        ". Supported options: --spaceship-color=r,g,b and --background=<theme>.";
+        return false;
     }
 
     return true;
@@ -99,9 +173,10 @@ bool parseSpaceshipColor(int argc, char** argv, Color* playerColor, std::string*
 
 int main(int argc, char** argv) {
     Color playerColor = kDefaultPlayerColor;
-    std::string playerColorError;
-    if (!parseSpaceshipColor(argc, argv, &playerColor, &playerColorError)) {
-        std::cerr << playerColorError << std::endl;
+    BackgroundTheme backgroundTheme = kDefaultBackgroundTheme;
+    std::string launchError;
+    if (!parseLaunchOptions(argc, argv, &playerColor, &backgroundTheme, &launchError)) {
+        std::cerr << launchError << std::endl;
         return 1;
     }
 
@@ -165,14 +240,16 @@ int main(int argc, char** argv) {
         shader.use();
         shader.setMat4("projection", projection);
 
-        Game game(kWindowWidth, kWindowHeight, playerColor);
+        Game game(kWindowWidth, kWindowHeight, playerColor, backgroundTheme);
 
-        auto previousTime = std::chrono::steady_clock::now();
+        const auto startTime = std::chrono::steady_clock::now();
+        auto previousTime = startTime;
         while (!glfwWindowShouldClose(window)) {
             const auto currentTime = std::chrono::steady_clock::now();
             const std::chrono::duration<float> elapsed = currentTime - previousTime;
             previousTime = currentTime;
             const float deltaTime = elapsed.count();
+            const float timeSeconds = std::chrono::duration<float>(currentTime - startTime).count();
 
             if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS || game.hasEnded()) {
                 glfwSetWindowShouldClose(window, GLFW_TRUE);
@@ -185,7 +262,7 @@ int main(int argc, char** argv) {
             glClear(GL_COLOR_BUFFER_BIT);
 
             shader.use();
-            game.render(shader, vao);
+            game.render(shader, vao, timeSeconds);
 
             glfwSwapBuffers(window);
             glfwPollEvents();
