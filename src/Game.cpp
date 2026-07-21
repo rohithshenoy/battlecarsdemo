@@ -21,11 +21,12 @@ constexpr int kMaxBulletsNormal = 1;
 constexpr int kMaxBulletsTurbo = 8;
 }
 
-Game::Game(int width, int height, const Color& playerColor)
+Game::Game(int width, int height, const Color& playerColor, BackgroundTheme backgroundTheme)
     : windowWidth_(width),
       windowHeight_(height),
       player_{width * 0.5f - 30.0f, 30.0f, 60.0f, 20.0f},
-      playerColor_(playerColor) {
+      playerColor_(playerColor),
+      backgroundTheme_(backgroundTheme) {
     createEnemies();
 }
 
@@ -135,7 +136,9 @@ void Game::update(float deltaTime) {
     }
 }
 
-void Game::render(const Shader& shader, unsigned int quadVao) const {
+void Game::render(const Shader& shader, unsigned int quadVao, float timeSeconds) const {
+    drawBackground(shader, quadVao, timeSeconds);
+
     drawRect(shader, quadVao, player_, playerColor_.red, playerColor_.green, playerColor_.blue);
 
     for (const Bullet& bullet : bullets_) {
@@ -178,6 +181,28 @@ void Game::buildModelMatrix(const Rect& rect, float* model) {
     model[13] = rect.y;
     model[14] = 0.0f;
     model[15] = 1.0f;
+}
+
+void Game::drawBackground(const Shader& shader, unsigned int quadVao, float timeSeconds) const {
+    const Rect fullScreen{
+        0.0f,
+        0.0f,
+        static_cast<float>(windowWidth_),
+        static_cast<float>(windowHeight_)
+    };
+
+    float model[16] = {};
+    buildModelMatrix(fullScreen, model);
+
+    shader.setInt("shapeType", 2);
+    shader.setInt("backgroundTheme", static_cast<int>(backgroundTheme_));
+    shader.setFloat("timeSeconds", timeSeconds);
+    shader.setVec3("resolution", static_cast<float>(windowWidth_), static_cast<float>(windowHeight_), 0.0f);
+    shader.setMat4("model", model);
+    shader.setVec3("spriteColor", 0.0f, 0.0f, 0.0f);
+
+    glBindVertexArray(quadVao);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 void Game::drawRect(const Shader& shader, unsigned int quadVao, const Rect& rect, float red, float green, float blue) const {

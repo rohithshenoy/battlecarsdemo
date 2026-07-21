@@ -139,6 +139,21 @@ An alternate form is also accepted:
 
 If no color is specified, the default green (`0.2, 0.9, 0.3`) is used.
 
+Choose a procedural space background with `--background=<theme>`:
+
+| Theme | Aliases | Look |
+|-------|---------|------|
+| `classic` | `black` | Solid black (default) |
+| `nebula` | `stars`, `space` | Deep space with stars and colorful nebulae |
+| `neon` | `synthwave`, `80s`, `retro` | 1980s neon sky with sun bands and a perspective grid |
+| `aurora` | | Curtains of green/purple northern lights over stars |
+| `deep-space` | `deepspace`, `deep` | Dark blue void with sparse stars and mist |
+
+```bash
+./build/SpaceInvaders --background=nebula
+./build/SpaceInvaders --background neon --spaceship-color=1.0,0.2,0.8
+```
+
 ## Controls
 
 | Key | Action |

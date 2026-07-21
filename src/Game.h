@@ -17,6 +17,14 @@ struct Color {
     float blue;
 };
 
+enum class BackgroundTheme {
+    Classic = 0,
+    Nebula = 1,
+    Neon = 2,
+    Aurora = 3,
+    DeepSpace = 4
+};
+
 struct Bullet {
     Rect rect;
     bool turbo = false;
@@ -31,11 +39,11 @@ class GLFWwindow;
 
 class Game {
 public:
-    Game(int width, int height, const Color& playerColor);
+    Game(int width, int height, const Color& playerColor, BackgroundTheme backgroundTheme);
 
     void processInput(GLFWwindow* window, float deltaTime);
     void update(float deltaTime);
-    void render(const Shader& shader, unsigned int quadVao) const;
+    void render(const Shader& shader, unsigned int quadVao, float timeSeconds) const;
 
     bool hasEnded() const;
 
@@ -44,6 +52,7 @@ private:
     int windowHeight_;
     Rect player_;
     Color playerColor_;
+    BackgroundTheme backgroundTheme_;
     std::vector<Bullet> bullets_;
     float fireCooldown_ = 0.0f;
     std::vector<Enemy> enemies_;
@@ -53,6 +62,7 @@ private:
 
     static bool intersects(const Rect& a, const Rect& b);
     static void buildModelMatrix(const Rect& rect, float* model);
+    void drawBackground(const Shader& shader, unsigned int quadVao, float timeSeconds) const;
     void drawRect(const Shader& shader, unsigned int quadVao, const Rect& rect, float red, float green, float blue) const;
     void drawRocket(const Shader& shader, unsigned int quadVao, const Rect& rect, bool turbo) const;
     void createEnemies();

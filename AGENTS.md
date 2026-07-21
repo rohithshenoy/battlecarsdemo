@@ -8,6 +8,7 @@ A single product: **SpaceInvaders**, a native C++17 / OpenGL 3.3 desktop game
 There is no web/JS component, no backend, no database, and no test suite. Source
 lives in `src/` (`main.cpp`, `Game.cpp`, `Shader.cpp`, `src/shaders/*.glsl`).
 CLI feature: `--spaceship-color=r,g,b` (each component `0.0`–`1.0`).
+CLI feature: `--background=<theme>` (`classic`, `nebula`, `neon`, `aurora`, `deep-space`).
 
 ### Build/run needs network
 `cmake` configure clones GLFW 3.3.9 and glad v0.1.36 via `FetchContent`, and the
