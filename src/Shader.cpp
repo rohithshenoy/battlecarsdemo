@@ -54,6 +54,16 @@ void Shader::setVec3(const char* name, float x, float y, float z) const {
     glUniform3f(location, x, y, z);
 }
 
+void Shader::setInt(const char* name, int value) const {
+    const int location = glGetUniformLocation(programId_, name);
+    glUniform1i(location, value);
+}
+
+void Shader::setFloat(const char* name, float value) const {
+    const int location = glGetUniformLocation(programId_, name);
+    glUniform1f(location, value);
+}
+
 std::string Shader::readFile(const char* path) {
     std::ifstream file(path);
     if (!file) {

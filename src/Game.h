@@ -49,6 +49,7 @@ private:
     static bool intersects(const Rect& a, const Rect& b);
     static void buildModelMatrix(const Rect& rect, float* model);
     void drawRect(const Shader& shader, unsigned int quadVao, const Rect& rect, float red, float green, float blue) const;
+    void drawRocket(const Shader& shader, unsigned int quadVao, const Rect& rect, bool turbo) const;
     void createEnemies();
     void finishGame(bool playerWon);
     void tryFire(bool turbo);
