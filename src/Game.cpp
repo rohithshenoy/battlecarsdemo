@@ -92,7 +92,7 @@ void Game::update(float deltaTime) {
 
         bool bulletHit = false;
         for (std::size_t index = 0; index < enemies_.size(); ++index) {
-            if (intersects(bulletIt->rect, enemies_[index])) {
+            if (intersects(bulletIt->rect, enemies_[index].rect)) {
                 enemies_.erase(enemies_.begin() + static_cast<long>(index));
                 bulletHit = true;
                 break;
@@ -107,18 +107,18 @@ void Game::update(float deltaTime) {
     }
 
     bool reverseDirection = false;
-    for (Rect& enemy : enemies_) {
-        enemy.x += enemyDirection_ * kEnemySpeed * deltaTime;
-        if (enemy.x <= 0.0f || enemy.x + enemy.width >= static_cast<float>(windowWidth_)) {
+    for (Enemy& enemy : enemies_) {
+        enemy.rect.x += enemyDirection_ * kEnemySpeed * deltaTime;
+        if (enemy.rect.x <= 0.0f || enemy.rect.x + enemy.rect.width >= static_cast<float>(windowWidth_)) {
             reverseDirection = true;
         }
     }
 
     if (reverseDirection) {
         enemyDirection_ *= -1.0f;
-        for (Rect& enemy : enemies_) {
-            enemy.y -= kEnemyDropDistance;
-            enemy.x = std::clamp(enemy.x, 0.0f, static_cast<float>(windowWidth_) - enemy.width);
+        for (Enemy& enemy : enemies_) {
+            enemy.rect.y -= kEnemyDropDistance;
+            enemy.rect.x = std::clamp(enemy.rect.x, 0.0f, static_cast<float>(windowWidth_) - enemy.rect.width);
         }
     }
 
@@ -127,8 +127,8 @@ void Game::update(float deltaTime) {
         return;
     }
 
-    for (const Rect& enemy : enemies_) {
-        if (enemy.y <= kEnemyBottomLimit) {
+    for (const Enemy& enemy : enemies_) {
+        if (enemy.rect.y <= kEnemyBottomLimit) {
             finishGame(false);
             return;
         }
@@ -146,8 +146,8 @@ void Game::render(const Shader& shader, unsigned int quadVao) const {
         }
     }
 
-    for (const Rect& enemy : enemies_) {
-        drawRect(shader, quadVao, enemy, 0.9f, 0.2f, 0.2f);
+    for (const Enemy& enemy : enemies_) {
+        drawRect(shader, quadVao, enemy.rect, enemy.color.red, enemy.color.green, enemy.color.blue);
     }
 }
 
@@ -207,13 +207,24 @@ void Game::createEnemies() {
     constexpr float startX = 90.0f;
     constexpr float startY = 480.0f;
 
+    // Distinct colors per invasion row (top → bottom).
+    constexpr Color rowColors[rows] = {
+        {0.95f, 0.35f, 0.85f},  // magenta
+        {0.35f, 0.75f, 1.0f},   // cyan
+        {1.0f, 0.75f, 0.2f},    // gold
+        {0.9f, 0.25f, 0.25f},   // red
+    };
+
     for (int row = 0; row < rows; ++row) {
         for (int column = 0; column < columns; ++column) {
-            enemies_.push_back(Rect{
-                startX + column * (enemyWidth + spacingX),
-                startY + row * (enemyHeight + spacingY),
-                enemyWidth,
-                enemyHeight
+            enemies_.push_back(Enemy{
+                Rect{
+                    startX + column * (enemyWidth + spacingX),
+                    startY + row * (enemyHeight + spacingY),
+                    enemyWidth,
+                    enemyHeight
+                },
+                rowColors[row]
             });
         }
     }
