@@ -22,6 +22,11 @@ struct Bullet {
     bool turbo = false;
 };
 
+struct Enemy {
+    Rect rect;
+    Color color;
+};
+
 class GLFWwindow;
 
 class Game {
@@ -41,7 +46,7 @@ private:
     Color playerColor_;
     std::vector<Bullet> bullets_;
     float fireCooldown_ = 0.0f;
-    std::vector<Rect> enemies_;
+    std::vector<Enemy> enemies_;
     float enemyDirection_ = 1.0f;
     bool finished_ = false;
     bool playerWon_ = false;
