@@ -136,17 +136,20 @@ vec3 neonBackground(vec2 uv)
 vec3 auroraBackground(vec2 uv)
 {
     vec2 p = uv * vec2(resolution.x / max(resolution.y, 1.0), 1.0);
-    vec3 color = vec3(0.01, 0.02, 0.05);
+    vec3 color = vec3(0.01, 0.02, 0.06);
 
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < 4; ++i) {
         float fi = float(i);
-        float band = fbm(vec2(p.x * (1.4 + fi * 0.35) + timeSeconds * (0.08 + fi * 0.03),
-                              p.y * 2.5 + fi * 2.0));
-        float curtain = smoothstep(0.35, 0.7, band) * smoothstep(0.15, 0.55, p.y)
-                        * (1.0 - smoothstep(0.7, 1.05, p.y));
-        vec3 tint = mix(vec3(0.05, 0.85, 0.45), vec3(0.35, 0.25, 0.95), fi / 2.0);
-        tint = mix(tint, vec3(0.15, 0.95, 0.85), sin(p.x * 4.0 + timeSeconds + fi) * 0.5 + 0.5);
-        color += tint * curtain * (0.35 - fi * 0.07);
+        float warp = fbm(vec2(p.x * 1.8 + timeSeconds * (0.12 + fi * 0.04), p.y * 0.8 + fi));
+        float ridge = abs(p.x - 0.35 - fi * 0.18 + sin(p.y * 3.0 + timeSeconds * 0.4 + fi) * 0.08
+                          + (warp - 0.5) * 0.35);
+        float curtain = exp(-ridge * ridge * 28.0)
+                        * smoothstep(0.08, 0.45, p.y)
+                        * (1.0 - smoothstep(0.72, 1.05, p.y));
+        float shimmer = 0.65 + 0.35 * sin(p.y * 18.0 - timeSeconds * 2.0 + fi * 2.0);
+        vec3 tint = mix(vec3(0.1, 0.95, 0.45), vec3(0.55, 0.2, 0.95), fi / 3.0);
+        tint = mix(tint, vec3(0.2, 0.95, 0.9), 0.5 + 0.5 * sin(p.x * 5.0 + timeSeconds + fi));
+        color += tint * curtain * shimmer * (0.55 - fi * 0.08);
     }
 
     float stars = starField(p, 42.0, 1.0) + starField(p * 2.1 + 5.0, 80.0, 1.0) * 0.5;
