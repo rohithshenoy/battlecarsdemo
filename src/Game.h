@@ -20,6 +20,7 @@ struct Color {
 struct Bullet {
     Rect rect;
     bool turbo = false;
+    float velocityX = 0.0f;
 };
 
 struct Enemy {

@@ -17,8 +17,10 @@ constexpr float kBulletWidth = 10.0f;
 constexpr float kBulletHeight = 24.0f;
 constexpr float kFireCooldownNormal = 0.35f;
 constexpr float kFireCooldownTurbo = 0.08f;
-constexpr int kMaxBulletsNormal = 1;
-constexpr int kMaxBulletsTurbo = 8;
+constexpr int kMaxBulletsNormal = 3;
+constexpr int kMaxBulletsTurbo = 24;
+constexpr int kProjectilesPerShot = 3;
+constexpr float kSpreadVelocityX = 140.0f;
 }
 
 Game::Game(int width, int height, const Color& playerColor)
@@ -31,19 +33,28 @@ Game::Game(int width, int height, const Color& playerColor)
 
 void Game::tryFire(bool turbo) {
     const int maxBullets = turbo ? kMaxBulletsTurbo : kMaxBulletsNormal;
-    if (static_cast<int>(bullets_.size()) >= maxBullets) {
+    if (static_cast<int>(bullets_.size()) + kProjectilesPerShot > maxBullets) {
         return;
     }
 
-    Bullet bullet;
-    bullet.turbo = turbo;
-    bullet.rect = Rect{
-        player_.x + player_.width * 0.5f - kBulletWidth * 0.5f,
-        player_.y + player_.height,
-        kBulletWidth,
-        kBulletHeight
-    };
-    bullets_.push_back(bullet);
+    const float centerX = player_.x + player_.width * 0.5f - kBulletWidth * 0.5f;
+    const float spawnY = player_.y + player_.height;
+
+    // Fire a spread of three separate projectiles: left, center, right.
+    for (int shot = 0; shot < kProjectilesPerShot; ++shot) {
+        const float direction = static_cast<float>(shot - 1);  // -1, 0, +1
+        Bullet bullet;
+        bullet.turbo = turbo;
+        bullet.velocityX = direction * kSpreadVelocityX;
+        bullet.rect = Rect{
+            centerX,
+            spawnY,
+            kBulletWidth,
+            kBulletHeight
+        };
+        bullets_.push_back(bullet);
+    }
+
     fireCooldown_ = turbo ? kFireCooldownTurbo : kFireCooldownNormal;
 }
 
@@ -84,8 +95,11 @@ void Game::update(float deltaTime) {
     for (auto bulletIt = bullets_.begin(); bulletIt != bullets_.end();) {
         const float speed = bulletIt->turbo ? kBulletSpeed * kTurboBulletSpeedMultiplier : kBulletSpeed;
         bulletIt->rect.y += speed * deltaTime;
+        bulletIt->rect.x += bulletIt->velocityX * deltaTime;
 
-        if (bulletIt->rect.y > static_cast<float>(windowHeight_)) {
+        if (bulletIt->rect.y > static_cast<float>(windowHeight_) ||
+            bulletIt->rect.x + bulletIt->rect.width < 0.0f ||
+            bulletIt->rect.x > static_cast<float>(windowWidth_)) {
             bulletIt = bullets_.erase(bulletIt);
             continue;
         }
