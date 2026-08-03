@@ -1,0 +1,40 @@
+---
+description: Explore the project directory and understand flow before debugging or analysis
+alwaysApply: true
+---
+
+# Explore before you debug
+
+Before proposing fixes, editing code, or answering architecture questions, orient yourself in this repo.
+
+## Required first pass (every task)
+
+1. Read `README.md` and `AGENTS.md` if not already in context.
+2. List the top-level layout (`CMakeLists.txt`, `src/`, `src/shaders/`).
+3. Identify the entry point and main control flow before diving into a single file.
+4. Search for symbols related to the bug or feature (`grep` / codebase search) instead of guessing file locations.
+
+## For this project (SpaceInvaders)
+
+| Area | Path | Role |
+|------|------|------|
+| Entry + game loop | `src/main.cpp` | GLFW window, GLAD init, delta-time loop |
+| Game logic | `src/Game.cpp`, `src/Game.h` | Input, enemies, bullets, collisions, win/lose |
+| Shaders | `src/Shader.cpp`, `src/shaders/*.glsl` | GLSL compile/link, uniforms |
+| Build | `CMakeLists.txt` | FetchContent (GLFW, GLAD), target `SpaceInvaders` |
+
+**Runtime flow:** `main()` → parse CLI color → GLFW/GLAD init → `Game` ctor → loop (`processInput` → `update` → `render`) until ESC or `game.hasEnded()`.
+
+## Before changing code
+
+- State in one short paragraph what you think is happening and which files own that behavior.
+- Prefer reading call sites and data flow over patching the first file that mentions an error.
+- For build/runtime issues on cloud/CI, follow the working recipe in `AGENTS.md` (do not assume stock `cmake -S . -B build` works).
+
+## When debugging
+
+1. Reproduce or read the exact error message.
+2. Trace from entry point to the failing subsystem.
+3. Check build vs runtime vs environment (OpenGL, GLFW, headless/Xvfb) before editing source.
+
+Do not skip this orientation step, even for small-looking bugs.

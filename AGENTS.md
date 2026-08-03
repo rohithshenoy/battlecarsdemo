@@ -1,5 +1,25 @@
 # AGENTS.md
 
+## Project flow (read this first)
+
+SpaceInvaders is a single-binary C++17 / OpenGL 3.3 desktop game. No backend, no tests, no web layer.
+
+```
+CMakeLists.txt          → FetchContent: GLFW 3.3.9, GLAD v0.1.36 → target SpaceInvaders
+src/main.cpp            → entry: CLI parse, GLFW window, GLAD, game loop
+src/Game.{h,cpp}        → player, bullets, enemy grid, collisions, win/lose
+src/Shader.{h,cpp}      → compile/link GLSL, set uniforms
+src/shaders/*.glsl      → vertex + fragment shaders (orthographic 2D quads)
+```
+
+**Game loop (each frame):** `processInput` → `update` (bullets, enemy march, collisions) → `render` → swap buffers. Game ends on ESC or when enemies reach the bottom (`hasEnded()`).
+
+**Key types:** `Rect`, `Color`, `Bullet`, `Enemy` in `Game.h`. Rendering draws axis-aligned quads via one shared VAO and `Shader::setMat4("model", ...)`.
+
+**CLI:** `--spaceship-color=r,g,b` (0.0–1.0 per channel), parsed in `main.cpp`.
+
+When debugging, trace from `main.cpp` into `Game` methods before changing shaders or CMake unless the error is clearly build- or GL-loader-related.
+
 ## Cursor Cloud specific instructions
 
 ### What this repo is
